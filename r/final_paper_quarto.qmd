@@ -1,0 +1,51 @@
+---
+title: "Machine Learning"
+subtitle: "Statistical Machine Learning--Stat 627"
+author:
+  - name: "Jithendra Sadu, Samuel Mweni, Wesley Wilson"
+date: "23 Oct 2023"
+format: 
+  docx:
+    reference-doc: custom-reference-doc.docx
+editor: visual
+engine: knitr
+---
+
+```{r, echo=FALSE, include=FALSE}
+# source("data_analysis.R")
+```
+
+## Introduction
+
+Something, something, something...
+
+## Research Questions
+
+-   Research question 1
+
+-   Research question 2
+
+-   Research question 3
+
+## About the Data
+
+<https://opendata.dc.gov/datasets/DCGIS::stop-data/about>
+
+## Methodology
+
+models used, model selection, model diagnostics.
+
+## Results
+
+What we found.
+
+## Discussion
+
+What we did and what we think about it.
+
+{{< pagebreak >}}
+
+## References
+
+::: {#refs}
+:::
