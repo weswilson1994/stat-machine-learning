@@ -21,11 +21,13 @@ Something, something, something...
 
 ## Research Questions
 
--   Research question 1
+-   Predicting stop outcomes: Build a classification model to predict the outcome a police stop (e.g., ticket, warning, arrest) based on various factors such a demographics, time of day, or stop duration.
 
--   Research question 2
+-   Will I be searched by the police?: Build a binary classification model capable of predicting the likeliness of a police search based on various factors such as demographics, time of day, stop duration, etc.
 
--   Research question 3
+-   Predicting stop duration: Build a model to predict how long a police stop might last once initiatied.
+
+-   How many tickets?: Build a model to predict the number of tickets one might receive if stopped.
 
 ## About the Data
 
