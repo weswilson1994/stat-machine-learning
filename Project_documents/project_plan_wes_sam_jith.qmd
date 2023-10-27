@@ -1,0 +1,41 @@
+---
+title: "Machine Learning Final Project Plan"
+subtitle: "Statistical Machine Learning--Stat 627"
+author:
+  - name: "Jithendra Sadu, Samuel Mweni, Wesley Wilson"
+date: "27 Oct 2023"
+format: html
+editor: visual
+---
+
+## Deliver an approximately 1 page **plan**, in HTML or PDF format, covering the following:
+
+## Project Title
+
+Understanding Police Stop Outcomes in Washington, D.C.
+
+### Group Members
+
+-   Jithendra Sadu
+
+-   Samuel Mweni
+
+-   Wesley Wilson
+
+### Research Question
+
+What factors influence police stop outcomes in Washington, D.C., and what are their implications for community-police interactions?
+
+### Approaches
+
+-   Predicting stop outcomes: Build a classification model to predict the outcome a police stop (e.g., ticket, warning, arrest) based on various factors such a demographics, time of day, or stop duration.
+
+-   Will I be searched by the police?: Build a binary classification model capable of predicting the likeliness of a police search based on various factors such as demographics, time of day, stop duration, etc.
+
+-   Predicting stop duration: Build a model to predict how long a police stop might last once initiated.
+
+### Group Responsibilities
+
+Each group member will be responsible for executing one of the approaches listed above from start to finish; this will include data preparation, model selection, diagnostics, and reporting final results for their respective sub-question. As the due date approaches, the group will convene and leverage our respective findings for our final write up and draft what implications these findings have on community policing.
+
+### Deliverable: Option B (Report)
