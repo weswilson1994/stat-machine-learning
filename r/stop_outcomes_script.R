@@ -96,10 +96,24 @@ stop_data <- stop_data %>%
   # these are binary columns that I will turn to factors. 
   mutate(across(c(person_searched, property_searched, traffic_involved), ~ as.factor(.x))) %>% 
   # some stop durations are clearly data entry errors (with stops spanning several days!) I will remove them.
-  filter(stop_duration_mins < 60 * 8)
+  filter(stop_duration_mins < 60 * 8) %>% 
+  mutate(age = as.numeric(age)) %>% 
+  # select the final variables 
+  select(! c(stop_type, datetime))
 
 # export in case my colleagues want to use the same data.
-#write_rds(x = stop_data, file = "data/final/wes_cleaned_stop_data.rds")
+write_rds(x = stop_data, file = "data/final/wes_cleaned_stop_data.rds")
+
+
+
+# Exploratory Analysis ----------------------------------------------------
+stop_data %>% 
+  group_by(stop_outcome) %>% 
+  summarise(mean = mean(stop_duration_mins, na.rm = T), 
+            sd = sd(stop_duration_mins), 
+            n = n()) %>% 
+  ungroup() %>% 
+  mutate(prop = n / sum(n))
 
 
 # Models ------------------------------------------------------------------
