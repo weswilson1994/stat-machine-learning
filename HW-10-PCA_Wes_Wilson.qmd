@@ -1,0 +1,374 @@
+---
+title: "HW-10-PCA_Wes_Wilson"
+format: pdf
+editor: visual
+---
+
+## Packages 
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(ISLR2)
+library(pls)
+library(MASS)
+library(leaps)
+library(glmnet)
+```
+
+## Data and Functions
+
+```{r}
+data("Boston")
+data("College")
+split_train_and_test_data <- function(split_pct, data, seed){
+  set.seed(seed)
+  z <- sample(nrow(data), split_pct * nrow(data))
+  train <- data[z,]
+  test <- data[-z,]
+  
+  return(list(train = train, test = test))
+}
+
+calc_mse <- function(y_actual, y_predicted) {
+  if (!is.vector(y_actual) || !is.vector(y_predicted)) {
+    warning("Both y_actual and y_predicted should be vectors.")
+    return(NULL)  # Return NULL to indicate an issue
+  }
+  mse <- mean((y_actual - y_predicted)^2)
+  
+  return(mse)
+}
+```
+
+# **College Applications Continued**
+
+This continues the College data problem from the previous h/w. (Chap. 6, \# 9 cd, p.286-287)
+
+Predict the number of applications received based on the other variables in the College data set.
+
+-   This data set is from our textbook. Access it with `library(ISLR2)`.
+
+Now fit models using two additional regularization methods using the validation set based on 50% split where appropriate and `set.seed(123)` where appropriate:
+
+```{r}
+model_data <- split_train_and_test_data(split_pct = .5, 
+                                        seed = 123, 
+                                        data = College)
+```
+
+\(a\) PCR model, with M, the number of principal components, chosen by cross-validation
+
+```{r}
+pcr_reg <- pcr(Apps ~ ., data = model_data$train, validation = "CV")
+summary(pcr_reg)
+```
+
+\(b\) PLS model, with M, the number of principal components, chosen by cross-validation.
+
+```{r}
+pls_reg <- plsr(Apps ~ ., data = model_data$train, validation = "CV")
+summary(pls_reg)
+```
+
+\(c\) Evaluate performance of each method in terms of **prediction MSE** and add the results into the summary table.
+
+\(d\) Comment on the results obtained.
+
+With the PCR model, around 6 components appears to be the optimal number. Once we move beyond 10 or so components, the changes in the variance explained by the x values and the rmse is nominal.
+
+With the plsr model, around 9 components looks to be an optimal number; though I suppose that is arguable depending on who you ask. I am going create new models that have the optimal number of components and use that to predict and evaluate performance.
+
+```{r}
+pcr_predictions <- predict(object = pcr_reg, 
+                           newdata = model_data$train, ncomp = 6) %>% 
+                           as.vector()
+
+plsr_redictions <- predict(object = pls_reg, newdata = model_data$train, 
+                           ncomp = 9) %>% as.vector()
+
+# the pls functions already does this; but doing again to better understand.
+calc_mse(y_actual = model_data$train$Apps, 
+         y_predicted = pcr_predictions) 
+calc_mse(y_actual = model_data$train$Apps, 
+         y_predicted = plsr_redictions) 
+
+```
+
+Do on the test data now.
+
+```{r}
+pcr_predictions <- pcr_predictions <- predict(object = pcr_reg, 
+                           newdata = model_data$test, ncomp = 6) %>% 
+                           as.vector()
+
+plsr_redictions <- predict(object = pls_reg, newdata = model_data$test, 
+                           ncomp = 9) %>% as.vector()
+
+pcr_rmse <- calc_mse(y_actual = model_data$test$Apps, 
+         y_predicted = pcr_predictions) %>% sqrt()
+
+plsr_rmse <- calc_mse(y_actual = model_data$test$Apps, 
+         y_predicted = plsr_redictions) %>% sqrt()
+
+```
+
+-   How accurately can we predict the number of college applications?
+
+    ```{r}
+    tibble(method = c("step_lse", "step_k_fold", "ridge", "lasso_1se", "lasso_min", "pcr", "pls"), 
+           results = c(sqrt(1327026), sqrt(1264962), sqrt(2092402),
+           sqrt(1528732), sqrt(1391186), pcr_rmse, plsr_rmse))
+    ```
+
+    -   Is there much difference among the test errors resulting from these five approaches?
+
+    -   Which method appears most accurate?
+
+There does not appear to be a drastic difference in the model accuracy between our approaches. We are able to predict the number of applications with rmse of between 1,150 and 1,300. It looks like the stepwise approach was the most accurate with 12 predictors.
+
+-   Look at help for: `pls::validationplot()`, `pls::R2()`, `pls::MSEP()`
+
+```{r}
+pls::RMSEP(object = pcr_reg, estimate = "all", 
+           newdata = model_data$test)
+
+# this appears to do the same thing that I did earlier manually, but faster. I can pass new data and it will show the same RMSE to the training and test; so long as I set estimate to "all."
+
+```
+
+# Comparison of Dimension Reduction Methods
+
+We will now try to predict per capita crime rate in the Boston data set in the {MASS} package (`library(MASS)`).
+
+-   Leave `rad` as an integer.
+
+-   Use `set.seed(1234)` and 50% validation where appropriate.
+
+```{r}
+model_data <- split_train_and_test_data(split_pct = .5, 
+                                        seed = 1234, data = Boston)
+```
+
+a.  Try out at least four of the dimension reduction methods that we explored over the last two weeks, such as the best subset selection, lasso, ridge regression, PCR, and PLS. Discuss results.
+
+### Principal Component Analysis Model
+
+```{r}
+pcr_model <- pcr(crim ~ ., data = model_data$train, validation = "CV")
+summary(pcr_model)
+```
+
+It appears that 7 components is the optimal number. After that, the increases are extremely marginal. Still, the model is only accounting for \~42% of the variance and the RMSE is pretty high.
+
+RMSE = \~ 8.7
+
+### Partial Least Squares Model 
+
+```{r}
+plsr_model <- plsr(crim ~ ., data = model_data$train, validation = "CV")
+summary(plsr_model)
+```
+
+The pls model performs quite similarly and its pretty hard to tell what the optimal number of components should be. After one component, the changes in variance and RMSE is pretty small.
+
+RMSE = \~8.7
+
+### Stepwise Regression 
+
+```{r}
+y_train <- model_data$train$crim
+full_regression <- lm(crim ~ ., data = model_data$train)
+step_output <- step(object = full_regression, method = "backward")
+step_summary <- summary(step_output)
+
+step_best_model <- lm(formula = crim ~ zn + nox + rm + 
+                        dis + rad + ptratio + 
+                        lstat + medv, data = model_data$train)
+
+
+step_predictions <- predict(object = step_best_model, newdata = model_data$train)
+
+sqrt(calc_mse(y_actual = y_train, y_predicted = step_predictions))
+
+```
+
+Stepwise regression selection selected 7 variables from the original 12 and resulted with rmse of 7.83.
+
+### Ridge Regression 
+
+```{r}
+x_train <- model.matrix(lm(formula = crim ~ ., 
+                           data = model_data$train))[,-1]
+
+r_train <- cv.glmnet(x = x_train, y = y_train, alpha = 0)
+```
+
+```{r}
+ridge_predictions <- predict(r_train, newx = x_train) %>% as.vector()
+ridge_predictions 
+
+sqrt(calc_mse(y_actual = y_train, y_predicted = ridge_predictions))
+
+```
+
+The ridge regression doesn't remove any variables and the rmse is 9.46.
+
+Overall, there was not a huge difference in performance. The stepwise selected model performed the best, with an rmse of \~ 7.9. The PCR and PLSR model perform similarly and the ridge regression did the worst.
+
+## Create Plots 
+
+a.  For all possible values of K, compare
+
+-   regression models that are based on the best subset of � �-variables.
+
+```{r}
+n_predictors <- ncol(model_data$train) - 1
+
+# empty data frame to store the results. 
+results <- data.frame(matrix(NA, ncol = 3, nrow = n_predictors))
+colnames(results) <- c("Variables", "adjusted_r2", "rmse")
+
+  
+for(k in 1:n_predictors) {
+  #browser()
+  predictor_combinations <- regsubsets(crim ~ ., 
+                                       data = model_data$train, 
+                                       nvmax = k, intercept = FALSE)
+  
+  # Fit models for each combination and obtain adjusted R-squared and MSE
+  models <- summary(predictor_combinations)
+  adj_r_squared_values <- models$rsq
+  
+  # Find the index of the model with the highest adjusted R-squared
+  best_model_index <- which.max(adj_r_squared_values)
+  
+  # Extract the names of selected predictors
+  selected_predictors <- names(coef(predictor_combinations, id = best_model_index))
+  
+  # Fit a linear model using the selected predictors
+  lm_model <- lm(crim ~ ., 
+                 data = model_data$train[,c("crim", selected_predictors)])
+  
+  # Calculate MSE
+  y_predicted <- predict(lm_model, newdata = model_data$train)
+  rmse_value <- sqrt(mean((model_data$train$crim - y_predicted)^2))
+
+  
+  # Store results for the current k
+results[k, 1] <- length(names(coef(predictor_combinations, id = best_model_index)))
+results[k, 2] <- adj_r_squared_values[best_model_index]
+results[k, 3] <- rmse_value
+}
+
+step_results <- results
+step_results
+```
+
+-   PCR based on � first principal components;
+
+```{=html}
+<!-- -->
+```
+-   `The pls::R2()` and `pls::MSEP()` functions calculate this automatically, so I will just extract those values as a vector.
+
+```{r}
+pcr_model <- pcr(crim ~ . -1, data = model_data$train, 
+                 validation = "CV", scaled = TRUE)
+
+pcr_r_squared <- pls::R2(pcr_model, estimate = "test", 
+                         newdata = model_data$test)$val %>% 
+data.frame() %>% 
+  pivot_longer(cols = everything(), 
+               names_to = "component", 
+               values_to = "r_squared") %>% 
+  slice(-1) 
+
+pcr_rmse <- pls::RMSEP(pcr_model, estimate = "test",
+                       newdata = model_data$test)$val %>% 
+data.frame() %>% 
+  pivot_longer(cols = everything(), 
+               names_to = "component", 
+               values_to = "rmse") %>% 
+  slice(-1) %>% 
+  dplyr::select(rmse)
+
+pcr_results <- bind_cols(pcr_r_squared, pcr_rmse)
+
+```
+
+-   PLS based on � first PLS components.
+
+```{r}
+plsr_model <- plsr(crim ~ ., data = model_data$train, 
+                   validation = "CV", scaled = TRUE)
+
+plsr_r_squared <- pls::R2(plsr_model, estimate = "test", 
+                          newdata = model_data$test)$val %>% 
+data.frame() %>% 
+  pivot_longer(cols = everything(), 
+               names_to = "component", 
+               values_to = "r_squared") %>% 
+  slice(-1) 
+
+plsr_rmse <- pls::RMSEP(plsr_model, estimate = "test",
+                        newdata = model_data$test)$val %>% 
+data.frame() %>% 
+  pivot_longer(cols = everything(), 
+               names_to = "component", 
+               values_to = "rmse") %>% 
+  slice(-1) %>% 
+  dplyr::select(rmse)
+
+plsr_results <- bind_cols(plsr_r_squared, plsr_rmse)
+```
+
+For each �, compare these methods in terms of the **explained proportion of the total variation of crime rate per capita** (adjusted) and in terms of **the prediction mean-squared error**.
+
+-   Hint: Look at the regsubsets output object list elements. The `$adjR2` will be useful. You may find it helpful to use the `$which` matrix in a for-loop to get the cross-validated MSEP.
+
+c.  Create one plot comparing adjusted-�2 for different values of � for subset regression, PCR, and PLS and interpret the plot.
+
+```{r}
+r_squared_data <- cbind(vars = step_results$Variables, 
+                        step_r2 = step_results$adjusted_r2,
+                        pcr_r2 = pcr_results$r_squared, 
+                        plsr_r2 = plsr_results$r_squared) %>% 
+  as.data.frame()
+
+
+ggplot(data = r_squared_data, aes(x = vars, y = step_r2)) + 
+  geom_line(color = "red") +
+  geom_line(mapping = aes(y = pcr_r2), color = "blue") + 
+  geom_line(mapping = aes(y = plsr_r2), color = "purple") +
+  labs(x = "Number of Variables", y = "Adjusted R-Squared")
+  
+```
+
+Based on the r-squared values, the stepwise model selection performed best with a max adjusted r-squared value of roughly 50% when it used all of the variables. Interestingly, the partial least squared model was outperforming the PCR model until the number of dimensions exceeded 8 or so. I am guessing this is an issue with scaling the variables.
+
+c.  Create one plot comparing Prediction MSE for different values of � for subset regression, PCR, and PLS and interpret the plot.
+
+```{r}
+rmse_data <- cbind(vars = step_results$Variables, 
+                        step_rmse = step_results$rmse,
+                        pcr_rmse = pcr_results$rmse, 
+                        plsr_rmse = plsr_results$rmse) %>% 
+  as.data.frame()
+
+
+ggplot(data = rmse_data, aes(x = vars, y = step_rmse)) + 
+  geom_line(color = "red") +
+  geom_line(mapping = aes(y = pcr_rmse), color = "blue") + 
+  geom_line(mapping = aes(y = plsr_rmse), color = "purple") +
+  labs(x = "Number of Variables", y = " RMSE")
+```
+
+e.  Propose a model (or set of models) that seem to perform well on this data set, and justify your answer. Make sure you are evaluating model performance on basis of cross-validation, as opposed to using training error.
+
+f.  Does your chosen model involve all of the features in the data set? Why or why not?
+
+I am not entirely sure that I set this up correctly. I don't fully understand estimate argument in the PCR/PLS function. I have changed it several times and get widely different results. It decided to make the estimate "test" which given that the model was created with the training makes sense to me.
+
+I would select the PCR models with somewhere between 2-3 components. As we can see from the plot, the RMSE is pretty stable for with 2 components vs 10; therefore, its not worth the degrees-of-freedom price we pay to get an extra .001 in precision in the rmse.

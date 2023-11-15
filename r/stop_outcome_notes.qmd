@@ -16,3 +16,7 @@ Our final data set included mostly categorical variables. In fact, only two of o
 Including the number of tickets or warnings issued improved KNN model performance by roughly 20 percentage points. Upon reflection, however, these variables were removed because if we know that someone was issued a ticket then we know that a minimum the stop outcome was a ticket; which is not particularly insightful.
 
 Though we had variables on the number of tickets and warnings issued, it did not make sense from a practical standpoint.
+
+Model matrix approach.
+
+-   When we include all of the variables in the model, there is too much noise. That is the variance within the x values is too high. As a result, our prediction accuracy actually decreases. So, we do principal component analysis to reduce the dimensions.
