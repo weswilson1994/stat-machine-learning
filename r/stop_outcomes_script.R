@@ -3,6 +3,8 @@ library(tidyverse)
 library(class)
 library(MASS)
 library(janitor)
+library(caret)
+library(gtsummary)
 
 # Functions ---------------------------------------------------------------
 find_best_k <- function(k, x_variables, y_variable) {
@@ -141,7 +143,6 @@ knn_data <- cbind(knn_data, new_data)
 # given how big the data set is, a 70/30 split seems appropriate. 
 model_data <- split_train_and_test_data(split_pct = .7, data = knn_data, seed = 123)
 
-
 x_variables <- setdiff(names(knn_data), c("stop_outcome", "day_of_week"))
 outcome_variable <- "stop_outcome"
 
@@ -154,7 +155,6 @@ yhat <- knn(train = xtrain, test = x_test, cl = y_train, k = 1)
 
 knn_model_matrix <- 1 - mean(yhat != y_test)
 knn_model_matrix
-
 
 ### KNN -- Non-tuned Without model matrix approach --------------------------------------------------------
 knn_data <- stop_data %>% 
@@ -181,14 +181,19 @@ knn_regular
 metrics <- map_dfr(1:50, ~ find_best_k(k = ., x_variables = x_variables, y_variable = "stop_outcome"))
 
 tuned_knn_no_matrix <- metrics[which.max(metrics$accuracy_rate), ]
-tuned_knn_no_matrix
+tuned_knn_no_matrix_accuracy <- tuned_knn_no_matrix$accuracy_rate
 ## LDA and QDA -------------------------------------------------------------
 
 ### LDA Model ---------------------------------------------------------------
 
 # wow, lda does the matrix automatically...
 lqda_data <- stop_data %>% 
-  dplyr::select(! c(ticket_count, warning_count))
+  #these variables create linear combinations
+  dplyr::select(! c(ticket_count, warning_count, traffic_involved, primary_stop_reason)) %>% 
+  mutate(male = if_else(gender == "Male", "Yes", "No"), 
+         white = if_else(ethnicity != "White", "Yes", "No")) %>% 
+  dplyr::select(! c(gender, ethnicity))
+
 
 lda_all <- lda(data = lqda_data, stop_outcome ~ ., CV = TRUE)
 lda_all
@@ -198,17 +203,23 @@ lda_accuracy <- mean(lda_all$class == stop_data$stop_outcome)
 lda_accuracy
 
 ### QDA Model ---------------------------------------------------------------
-qda_all <- lda(data = lqda_data, stop_outcome ~ ., CV = TRUE)
+qda_model <- qda(stop_outcome ~ stop_district + stop_duration_mins + person_searched + property_searched + age + hour_of_day + day_of_week + male + white, 
+                 data = lqda_data, CV = TRUE)
 
-qda_accuracy <- mean(qda_all$class == stop_data$stop_outcome)
+qda_accuracy <- mean(qda_model$class == stop_data$stop_outcome)
 
 qda_accuracy
-# Cross-Validation --------------------------------------------------------
 
-
+knn_model_matrix
+knn_regular
+tuned_knn_no_matrix_accuracy
+lda_accuracy
+qda_accuracy
 
 # Plots -------------------------------------------------------------------
-
-
+tibble("Model" = c("KNN (not tuned)", "KNN (model matrix)", "KNN (tuned)", "LDA", "QDA"),
+       "Accuracy Rate" = c(knn_regular, knn_model_matrix, tuned_knn_no_matrix_accuracy, lda_accuracy, qda_accuracy)) %>% 
+  arrange(desc("Accuracy Rate")) %>% 
+  gt::gt()
 
 
