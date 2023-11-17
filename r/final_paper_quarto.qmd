@@ -15,9 +15,13 @@ engine: knitr
 # source("data_analysis.R")
 ```
 
-## Introduction
+## Executive Summary
 
 Something, something, something...
+
+-   Identify relevant stakeholders
+
+-   ethical concerns
 
 ## Research Question
 
@@ -31,23 +35,43 @@ What factors influence police stop outcomes in Washington, D.C., and what are th
 
 The data includes additional information about the search for example, whether the person gave consent, there was a warrant involved, if the officer had probable cause, etcetera. For simplicity, I remove these attributes and instead focus on if a search was conducted.
 
+### Data Challenges 
+
 ## Methodology
 
-models used, model selection, model diagnostics.
+### What will the Outcome of my Stop Be?  
 
--   Predicting stop outcomes: Build a classification model to predict the outcome a police stop (e.g., ticket, warning, arrest) based on various factors such a demographics, time of day, or stop duration.
+-   Build a classification model to predict the outcome a police stop (e.g., ticket, warning, arrest) based on various factors such a demographics, time of day, or stop duration.
+
+-   Approach / methods
+
+-   One plot
+
+### Will I be Searched by the Police? 
 
 -   Will I be searched by the police?: Build a binary classification model capable of predicting the likeliness of a police search based on various factors such as demographics, time of day, stop duration, etc.
 
+-   Approach / methods
+
+-   One plot
+
+### How Long Will the Stop Last? 
+
 -   Predicting stop duration: Build a model to predict how long a police stop might last once initiated.
+
+-   Approach / methods
+
+-   One plot
 
 ## Results
 
 What we found.
 
-## Discussion
+## Summarized Findings
 
-What we did and what we think about it.
+## Recommendations
+
+-   Identify
 
 {{< pagebreak >}}
 
