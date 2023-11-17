@@ -15,8 +15,8 @@ Our final data set included mostly categorical variables. In fact, only two of o
 
 Including the number of tickets or warnings issued improved KNN model performance by roughly 20 percentage points. Upon reflection, however, these variables were removed because if we know that someone was issued a ticket then we know that a minimum the stop outcome was a ticket; which is not particularly insightful.
 
-Though we had variables on the number of tickets and warnings issued, it did not make sense from a practical standpoint.
+Though we had variables on the number of tickets and warnings issued, it did not make sense from a practical standpoint, as these variables are key indicators or perfectly linear with stop outcome. KNN performed best due to the non-parametric nature. LDA and QDA performed the worst. Interestingly, QDA did the absolute worst because the QDA function would not allow for any categorical variable.
 
-Model matrix approach.
+Ultimately, the non-binary classification approach might not be the best. It likely would have been better. For some reason, the lasso regression model had a 100% model accuracy.
 
--   When we include all of the variables in the model, there is too much noise. That is the variance within the x values is too high. As a result, our prediction accuracy actually decreases. So, we do principal component analysis to reduce the dimensions.
+-   When we include all of the variables in the model, there is too much noise. That is the variance within the x values is too high. As a result, our prediction accuracy actually decreases. So, we go back and perform lasso to regularize the model and select only relevant variables. Unfortunately, the lasso regression keeps all variables.

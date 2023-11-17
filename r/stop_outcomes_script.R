@@ -121,6 +121,42 @@ ggplot(data = slice_sample(stop_data, n = 1000), mapping = aes(y = stop_duration
 
 # well the x variables are not normally distributed. 
 qqplot(x = stop_data$stop_duration_mins, stop_data$age)
+
+
+# Model Selection (lasso) -------------------------------------------------
+# Model Selection
+# given how big the data set is, a 70/30 split seems appropriate. 
+model_data <- split_train_and_test_data(split_pct = .7, data = stop_data, seed = 123)
+
+x_train <- model.matrix(lm(ticket_count ~ . -1 - stop_outcome, data = model_data$train))
+y_train <- model_data$train$stop_outcome
+
+x_test <- model.matrix(lm(ticket_count ~ . -1 - stop_outcome, data = model_data$test))
+y_test <- model_data$test$stop_outcome
+
+# I know I need to remove perfectly linear variables, so I will use lasso .
+r_train_cv <- cv.glmnet(x = x_train, y = y_train, alpha = 1, family = "multinomial")
+
+r_train_cv
+selected_coef <- coef(r_train_cv, s = "lambda.1se")
+cv_plot <- plot(r_train_cv)
+ggsave(filename = "./r/plots/lasso_model_selection.png", plot = cv_plot)
+
+
+## Final x variables -------------------------------------------------------
+# lasso selected all of the variables. 
+
+# Models ------------------------------------------------------------------
+# first, I will use the lasso model. 
+# this returns probabilities, so I have to turn them to estimates. 
+pred_test <- predict(r_train_cv, newx = x_test, s = "lambda.1se", type = "response") %>% as.data.frame()
+
+outcomes <- c("arrest", "no action", "ticket", "warning")
+
+pred_test$predicted_categories <- outcomes[max.col(pred_test)]
+
+mean(pred_test$predicted_categories != y_test)
+# well, this model is 100% accurate, which can't be right. I will just use the variables it selected, which is all of them....
 # Models ------------------------------------------------------------------
 ## KNN ---------------------------------------------------------------------
 
@@ -217,9 +253,13 @@ lda_accuracy
 qda_accuracy
 
 # Plots -------------------------------------------------------------------
-tibble("Model" = c("KNN (not tuned)", "KNN (model matrix)", "KNN (tuned)", "LDA", "QDA"),
+accuracy <- tibble("Model" = c("KNN (not tuned)", "KNN (model matrix)", "KNN (tuned)", "LDA", "QDA"),
        "Accuracy Rate" = c(knn_regular, knn_model_matrix, tuned_knn_no_matrix_accuracy, lda_accuracy, qda_accuracy)) %>% 
   arrange(desc("Accuracy Rate")) %>% 
   gt::gt()
+
+accuracy
+
+ggsave(filename = "./r/plots/outcomes_accuracy.png")
 
 
