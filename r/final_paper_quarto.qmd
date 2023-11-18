@@ -33,9 +33,9 @@ What factors influence police stop outcomes in Washington, D.C., and what are th
 
 [https://www.arcgis.com/sharing/rest/content/items/cc1b18f4c6954ae891d2e262b991b06a/info/metadata/metadata.xml?format=default&output=htmlhttps://www.arcgis.com/sharing/rest/content/items/cc1b18f4c6954ae891d2e262b991b06a/info/metadata/metadata.xml?format=default&output=html](https://www.arcgis.com/sharing/rest/content/items/cc1b18f4c6954ae891d2e262b991b06a/info/metadata/metadata.xml?format=default&output=html)
 
-The data includes additional information about the search for example, whether the person gave consent, there was a warrant involved, if the officer had probable cause, etcetera. For simplicity, I remove these attributes and instead focus on if a search was conducted.
 
 ### Data Challenges 
+The data includes additional information about the search for example, whether the person gave consent, there was a warrant involved, if the officer had probable cause, etcetera. For simplicity, I remove these attributes and instead focus on if a search was conducted.
 
 ## Methodology
 

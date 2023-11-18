@@ -1,0 +1,22 @@
+---
+title: "stop outcome notes"
+format: html
+editor: visual
+---
+
+## Data Issues
+
+The data includes additional information about the search for example, whether the person gave consent, there was a warrant involved, if the officer had probable cause, etcetera. For simplicity, I remove these attributes and instead focus on if a search was conducted.
+
+\
+There were stop duration values that were clearly data entry errors, such as negative stop durations. Additionally, some stops exceeded 8 hours, with some stop durations lasting as long as 10,000 minutes. Imagine spending a week on a single stop! Given the department does not allow officers to work more than 18 hours, we exclude any stop duration observations with values exceeding 8 hours. It is possible for that to happen.
+
+Our final data set included mostly categorical variables. In fact, only two of our final variables were quantitative; which will not work for KNN. So, I created a model matrix to turn categorical variables into dummy variables.
+
+Including the number of tickets or warnings issued improved KNN model performance by roughly 20 percentage points. Upon reflection, however, these variables were removed because if we know that someone was issued a ticket then we know that a minimum the stop outcome was a ticket; which is not particularly insightful.
+
+Though we had variables on the number of tickets and warnings issued, it did not make sense from a practical standpoint, as these variables are key indicators or perfectly linear with stop outcome. KNN performed best due to the non-parametric nature. LDA and QDA performed the worst. Interestingly, QDA did the absolute worst because the QDA function would not allow for any categorical variable.
+
+Ultimately, the non-binary classification approach might not be the best. It likely would have been better. For some reason, the lasso regression model had a 100% model accuracy.
+
+-   When we include all of the variables in the model, there is too much noise. That is the variance within the x values is too high. As a result, our prediction accuracy actually decreases. So, we go back and perform lasso to regularize the model and select only relevant variables. Unfortunately, the lasso regression keeps all variables.
