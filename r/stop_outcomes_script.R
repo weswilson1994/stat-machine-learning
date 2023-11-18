@@ -5,6 +5,8 @@ library(MASS)
 library(janitor)
 library(caret)
 library(gtsummary)
+library(glmnet)
+library(memoise)
 
 # Functions ---------------------------------------------------------------
 find_best_k <- function(k, x_variables, y_variable) {
@@ -37,13 +39,11 @@ split_train_and_test_data <- function(split_pct, data, seed){
   
   return(list(train = train, test = test))
 }
-calc_confusion_matrix <- function(y_predicted, y_actual) {
-  table(predicted = y_predicted, actual = y_actual)
-}
-
 
 # Data --------------------------------------------------------------------
 stop_data <- read_csv(file = "data/original/Stop_Data.csv", na = "NULL")
+n_cols <- ncol(stop_data)
+n_rows <- nrow(stop_data)
 
 # Data Preparation --------------------------------------------------------
 stop_data <- clean_names(stop_data)
@@ -97,14 +97,19 @@ stop_data <- stop_data %>%
   # select the final variables-->drop na values because modeling wont work with them.  
   filter(stop_duration_mins > 0) %>% 
   dplyr::select(-stop_type, -datetime) %>% 
-  drop_na()
+  drop_na() 
 
 
 # export in case my colleagues want to use the same data.
 write_rds(x = stop_data, file = "data/final/wes_cleaned_stop_data.rds")
 
+stop_data <- stop_data %>% 
+  mutate(male = if_else(gender == "Male", 1, 0)) %>% 
+  mutate(white_person = if_else(ethnicity == "White", 1, 0)) %>% 
+  dplyr::select(-ethnicity, -gender)
+
 # Exploratory Analysis ----------------------------------------------------
-stop_data %>% 
+stop_summary <- stop_data %>% 
   group_by(stop_outcome) %>% 
   summarise(mean_duration = mean(stop_duration_mins, na.rm = T), 
             sd_duration = sd(stop_duration_mins), 
@@ -113,6 +118,8 @@ stop_data %>%
             n = n()) %>% 
   ungroup() %>% 
   mutate(prop = n / sum(n))
+
+stop_summary
 
 # looking at the SD of the age and duration, I think qda or knn will be better. 
 # create a graph to analyze how the x variables are distributed 
@@ -149,7 +156,7 @@ ggsave(filename = "./r/plots/lasso_model_selection.png", plot = cv_plot)
 # Models ------------------------------------------------------------------
 # first, I will use the lasso model. 
 # this returns probabilities, so I have to turn them to estimates. 
-pred_test <- predict(r_train_cv, newx = x_test, s = "lambda.1se", type = "response") %>% as.data.frame()
+pred_test <- predict(r_train_cv, newx = x_test, type = "response") %>% as.data.frame()
 
 outcomes <- c("arrest", "no action", "ticket", "warning")
 
@@ -193,12 +200,8 @@ knn_model_matrix <- 1 - mean(yhat != y_test)
 knn_model_matrix
 
 ### KNN -- Non-tuned Without model matrix approach --------------------------------------------------------
-knn_data <- stop_data %>% 
-  mutate(male = if_else(gender == "Male", 1, 0)) %>% 
-  mutate(white_person = if_else(ethnicity == "White", 1, 0))
-  
 
-model_data <- split_train_and_test_data(split_pct = .7, data = knn_data, seed = 123)
+model_data <- split_train_and_test_data(split_pct = .7, data = stop_data, seed = 123)
 
 x_variables <- c("stop_duration_mins","person_searched", "property_searched", "traffic_involved", "age", "male", "white_person")
 x_variables
@@ -218,6 +221,7 @@ metrics <- map_dfr(1:50, ~ find_best_k(k = ., x_variables = x_variables, y_varia
 
 tuned_knn_no_matrix <- metrics[which.max(metrics$accuracy_rate), ]
 tuned_knn_no_matrix_accuracy <- tuned_knn_no_matrix$accuracy_rate
+tuned_knn_no_matrix_accuracy
 ## LDA and QDA -------------------------------------------------------------
 
 ### LDA Model ---------------------------------------------------------------
@@ -225,11 +229,7 @@ tuned_knn_no_matrix_accuracy <- tuned_knn_no_matrix$accuracy_rate
 # wow, lda does the matrix automatically...
 lqda_data <- stop_data %>% 
   #these variables create linear combinations
-  dplyr::select(! c(ticket_count, warning_count, traffic_involved, primary_stop_reason)) %>% 
-  mutate(male = if_else(gender == "Male", "Yes", "No"), 
-         white = if_else(ethnicity != "White", "Yes", "No")) %>% 
-  dplyr::select(! c(gender, ethnicity))
-
+  dplyr::select(! c(ticket_count, warning_count, traffic_involved, primary_stop_reason)) 
 
 lda_all <- lda(data = lqda_data, stop_outcome ~ ., CV = TRUE)
 lda_all
@@ -239,7 +239,7 @@ lda_accuracy <- mean(lda_all$class == stop_data$stop_outcome)
 lda_accuracy
 
 ### QDA Model ---------------------------------------------------------------
-qda_model <- qda(stop_outcome ~ stop_district + stop_duration_mins + person_searched + property_searched + age + hour_of_day + day_of_week + male + white, 
+qda_model <- qda(stop_outcome ~ stop_district + stop_duration_mins + person_searched + property_searched + age + hour_of_day + day_of_week + male + white_person, 
                  data = lqda_data, CV = TRUE)
 
 qda_accuracy <- mean(qda_model$class == stop_data$stop_outcome)
@@ -256,10 +256,10 @@ qda_accuracy
 accuracy <- tibble("Model" = c("KNN (not tuned)", "KNN (model matrix)", "KNN (tuned)", "LDA", "QDA"),
        "Accuracy Rate" = c(knn_regular, knn_model_matrix, tuned_knn_no_matrix_accuracy, lda_accuracy, qda_accuracy)) %>% 
   arrange(desc("Accuracy Rate")) %>% 
-  gt::gt()
+  gt::gt(caption = "Accuracy of All Stop Outcome Models")
 
 accuracy
 
-ggsave(filename = "./r/plots/outcomes_accuracy.png")
+gt::gtsave(data = accuracy, filename = "./r/plots/stop_outcome_accuracy.PNG")
 
-
+gt::gtsave()
