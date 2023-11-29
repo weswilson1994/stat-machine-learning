@@ -1,0 +1,654 @@
+---
+title: "ML_project"
+author: "samuel Mweni"
+date: "2023-11-10"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(caret)
+```
+
+```{r}
+wes_cleaned_stop_data <- read.csv("wes_cleaned_stop_data.csv")
+```
+
+
+# Data cleaning 
+```{r}
+# Sum of NA values in each column
+na_count <- colSums(is.na(wes_cleaned_stop_data))
+print(na_count)
+
+```
+
+handling Negative Duration
+
+```{r}
+# Investigating negative values in 'stop_duration_mins'
+summary(wes_cleaned_stop_data$stop_duration_mins)
+
+```
+```{r}
+# Removing rows with negative 'stop_duration_mins'
+wes_cleaned_stop_data <- wes_cleaned_stop_data[wes_cleaned_stop_data$stop_duration_mins >= 0, ]
+```
+
+
+Data Type Conversion for Categorical Variables
+```{r}
+library(caret)
+dummies <- dummyVars(" ~ .", data = wes_cleaned_stop_data)
+wes_cleaned_stop_data_transformed <- predict(dummies, newdata = wes_cleaned_stop_data)
+
+```
+
+```{r}
+glimpse(wes_cleaned_stop_data)
+```
+
+##2.  Exploratory Data Analysis (EDA)
+
+```{r}
+# Summary statistics for 'stop_duration_mins'
+summary(wes_cleaned_stop_data$stop_duration_mins)
+```
+
+```{r}
+# Histogram to see the distribution of 'stop_duration_mins'
+library(ggplot2)
+ggplot(wes_cleaned_stop_data, aes(x = stop_duration_mins)) +
+  geom_histogram(binwidth = 5, fill = "blue", color = "black") +
+  labs(title = "Histogram of Stop Duration", x = "Stop Duration (mins)", y = "Frequency")
+```
+
+
+# Relationships Between Predictors and Stop Duration
+ a) Stop Duration by Day of Week
+
+```{r}
+ggplot(wes_cleaned_stop_data, aes(x = day_of_week, y = stop_duration_mins)) +
+  geom_boxplot() +
+  labs(title = "Stop Duration by Day of Week", x = "Day of Week", y = "Stop Duration (mins)")
+
+```
+ b) Stop Duration by Time Category
+```{r}
+ggplot(wes_cleaned_stop_data, aes(x = time_category, y = stop_duration_mins)) +
+  geom_boxplot() +
+  labs(title = "Stop Duration by Time Category", x = "Time Category", y = "Stop Duration (mins)")
+
+```
+ c) Stop Duration by Primary Stop Reason
+```{r}
+ggplot(wes_cleaned_stop_data, aes(x = primary_stop_reason, y = stop_duration_mins)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Stop Duration by Primary Stop Reason", x = "Primary Stop Reason", y = "Stop Duration (mins)")
+
+```
+ Correlation Analysis for Numerical Variables
+```{r}
+# Selecting only numerical columns for correlation analysis
+numerical_data <- wes_cleaned_stop_data %>% 
+  select_if(is.numeric)
+
+# Calculating correlation
+correlation_matrix <- cor(numerical_data, use = "complete.obs")
+
+# Displaying the correlation matrix
+print(correlation_matrix)
+
+```
+
+
+
+```{r}
+# Plot for 'day_of_week'
+plot1 <- ggplot(wes_cleaned_stop_data, aes(x = day_of_week, y = stop_duration_mins)) +
+  geom_bar(stat = "summary", fun = "mean", fill = "blue") +
+  labs(title = "Average Stop Duration by Day of Week", x = "Day of Week", y = "Average Stop Duration (mins)")
+
+# Plot for 'gender'
+plot2 <- ggplot(wes_cleaned_stop_data, aes(x = gender, y = stop_duration_mins)) +
+  geom_bar(stat = "summary", fun = "mean", fill = "red") +
+  labs(title = "Average Stop Duration by Gender", x = "Gender", y = "Average Stop Duration (mins)")
+
+# Plot for 'ethnicity'
+plot3 <- ggplot(wes_cleaned_stop_data, aes(x = ethnicity, y = stop_duration_mins)) +
+  geom_bar(stat = "summary", fun = "mean", fill = "green") +
+  labs(title = "Average Stop Duration by Ethnicity", x = "Ethnicity", y = "Average Stop Duration (mins)")
+
+# Combine the plots
+grid.arrange(plot1, plot2, plot3, ncol = 1)
+
+```
+ 
+ 
+
+ 
+
+#  Feature Selection 
+
+Exclusion of 'Ticket Count' and 'Warning Count' from Predictive Model
+In the development of our predictive model aimed at estimating the duration of police stops, a critical step involves selecting the most relevant and informative features. During this process, particular attention must be paid to the nature and statistical properties of each variable within our dataset. After a thorough examination and statistical analysis, we have decided to exclude two specific variables from our model: ticket_count and warning_count.
+
+Rationale for Exclusion:
+Lack of Variability:
+
+Upon inspecting the dataset, we observed that both ticket_count and warning_count exhibit zero variability across all observations. In other words, these columns contain constant values for every record in the dataset. This lack of variation renders them ineffective as predictors; a variable that does not vary cannot contribute to distinguishing between different outcomes in a predictive model.
+Impact on Correlation Analysis:
+
+The correlation matrix generated during our exploratory data analysis further highlighted the issues with these variables. Both ticket_count and warning_count displayed a correlation coefficient of 1 with themselves and NA (Not Available) with other variables. The correlation of 1 indicates perfect correlation due to the lack of variability, and the NA values indicate that it is not possible to compute a meaningful correlation with other variables.
+Improving Model Performance and Interpretability:
+
+Including variables that offer no informational value can lead to inefficiencies in the model. Removing such variables not only streamlines the modeling process but also aids in enhancing the interpretability of the model. By focusing on variables that genuinely influence the target variable, we can build a model that is both more accurate and easier to understand.
+
+
+
+#   Encoding categorical variables
+
+```{r}
+
+# Setting up dummy variables for one-hot encoding
+dummies <- dummyVars("~ .", data = wes_cleaned_stop_data)
+
+# Creating the new data frame with encoded variables
+wes_cleaned_stop_data_encoded <- predict(dummies, newdata = wes_cleaned_stop_data)
+
+```
+
+
+```{r}
+# Convert the matrix to a data frame
+wes_cleaned_stop_data_encoded <- data.frame(wes_cleaned_stop_data_encoded)
+
+# Ensure the target variable is correctly named and included
+# Assuming the original target variable is in 'wes_cleaned_stop_data'
+wes_cleaned_stop_data_encoded$stop_duration_mins <- wes_cleaned_stop_data$stop_duration_mins
+
+```
+
+
+
+
+#   Creating  a Subset of the Data
+The Data was too large that was taking 2 days to run a prediction model so we decided to use a portion of the Data to run the model
+
+```{r}
+#selecting 2000 random data from the orignal dataset
+set.seed(123) # for reproducibility
+sampled_data <- wes_cleaned_stop_data_encoded[sample(nrow(wes_cleaned_stop_data_encoded), 2000), ]
+
+```
+
+
+
+
+#   Splitting the Data
+Split this subset into a training and testing set
+```{r}
+partition <- createDataPartition(sampled_data$stop_duration_mins, p = 0.8, list = FALSE)
+training_set <- sampled_data[partition, ]
+testing_set <- sampled_data[-partition, ]
+
+```
+
+
+#   Check and Handle Missing and Infinite Values
+```{r}
+# Check and handle missing and infinite values for each column
+for (col in names(training_set)) {
+    # Replace infinite values with NA
+    training_set[[col]][!is.finite(training_set[[col]])] <- NA
+    
+    # Impute missing values (NA) or remove them - here we choose to remove
+    # If you have a preferred imputation method, you can apply it here
+    training_set <- na.omit(training_set)
+}
+
+```
+
+
+
+#   Scaling the Data
+
+```{r}
+library(caret)
+
+# Prepare for scaling - exclude the target variable
+features <- training_set[, names(training_set) != "stop_duration_mins"]
+
+# Apply scaling
+preproc <- preProcess(features, method = c("center", "scale"))
+training_set_scaled <- predict(preproc, training_set)
+
+# Add the target variable back if it was removed during scaling
+training_set_scaled$stop_duration_mins <- training_set$stop_duration_mins
+
+```
+
+
+```{r}
+# Convert training_set_scaled to a dataframe if it's not already
+training_set_scaled <- as.data.frame(training_set_scaled)
+
+```
+
+
+
+```{r}
+# Set seed for reproducibility
+set.seed(123)
+
+# Sample 2000 rows from the dataset
+sampled_data <- wes_cleaned_stop_data_encoded[sample(nrow(wes_cleaned_stop_data_encoded), 2000), ]
+
+# Remove rows with NA values
+sampled_data_clean <- na.omit(sampled_data)
+
+# Remove specified columns
+columns_to_remove <- c("ticket_count", "warning_count", "genderX", 
+                       "ethnicityAmerican.Indian.Alaska.Native", 
+                       "ethnicityNative.Hawaiian.Pacific.Islander")
+sampled_data_clean <- sampled_data_clean[, !(names(sampled_data_clean) %in% columns_to_remove)]
+
+# Scale the data (excluding the target variable 'stop_duration_mins')
+library(caret)
+preprocess_params <- preProcess(sampled_data_clean[, names(sampled_data_clean) != "stop_duration_mins"], method = c("center", "scale"))
+scaled_data <- predict(preprocess_params, sampled_data_clean)
+
+# Add the target variable back after scaling
+scaled_data$stop_duration_mins <- sampled_data_clean$stop_duration_mins
+
+```
+
+
+```{r}
+# Assuming original_data is your original dataset
+lm_model_unscaled <- lm(stop_duration_mins ~ ., data =sampled_data_clean )
+summary(lm_model_unscaled)
+
+```
+
+
+
+# The summary of The Regression model.
+
+The significance of the variables is indicated by the stars next to the coefficients in the summary output.
+
+person_searched: This variable is significant and has a positive coefficient (6.88478). It suggests that if a person is searched during a stop, the stop duration tends to be longer by approximately 6.88 minutes, holding other factors constant.
+
+ethnicityMultiple: This variable is also significant with a positive coefficient (8.61007). It implies that stops involving individuals of multiple ethnicities tend to have longer durations compared to the reference ethnicity group.
+
+ethnicityOther: This is another significant variable with a notably high positive coefficient (22.98265). This indicates that stops involving individuals of an ethnicity categorized as 'Other' tend to have considerably longer durations.
+
+primary_stop_reasoncall.for.service: This variable is significant and has a large positive coefficient (12.44004). It suggests that stops initiated due to a call for service are associated with longer durations.
+
+primary_stop_reasoninformation.obtained.from.witnesses.or.informants: This variable is significant with a positive coefficient (13.00772). Stops initiated based on information from witnesses or informants are associated with longer durations.
+
+primary_stop_reasonresponding.to.bolo: This variable has a positive and significant coefficient (9.56717), indicating that stops made in response to a 'be on the lookout' (BOLO) alert tend to be longer.
+
+primary_stop_reasontraffic.response: This variable is significant with a positive coefficient (8.88739), suggesting that stops made in response to traffic incidents are associated with longer durations.
+
+day_of_weekFri: This variable is significant and has a positive coefficient (3.95357). Stops made on Fridays tend to be longer than those on the reference day of the week.
+
+day_of_weekTue: This variable is significant with a negative coefficient (-2.77381). It suggests that stops on Tuesdays tend to be shorter compared to the reference day.
+
+time_categoryAfternoon: This variable is marginally significant (indicated by a dot) with a negative coefficient (-1.77112). It implies that stops in the afternoon might be shorter compared to the reference time category
+
+
+
+
+```{r}
+# Identifying zero variance variables
+zero_var_cols <- c("ticket_count", "warning_count", "genderX", 
+                   "ethnicityAmerican.Indian.Alaska.Native", 
+                   "ethnicityNative.Hawaiian.Pacific.Islander")
+
+# Removing zero variance variables
+training_set_scaled <- training_set_scaled[, !names(training_set_scaled) %in% zero_var_cols]
+
+```
+
+
+```{r}
+
+# First, extract the target variable
+y_train <- training_set_scaled$stop_duration_mins
+
+# Now, remove the target variable from the dataset
+training_set_scaled <- training_set_scaled[, names(training_set_scaled) != "stop_duration_mins"]
+
+# Convert the remaining data to a matrix
+X_train <- as.matrix(training_set_scaled)
+
+
+```
+
+
+```{r}
+
+
+# Preparing training data
+X_train <- as.matrix(training_set[, names(training_set) != "stop_duration_mins"])
+y_train <- training_set$stop_duration_mins
+
+# Preparing testing data
+X_test <- as.matrix(testing_set[, names(testing_set) != "stop_duration_mins"])
+y_test <- testing_set$stop_duration_mins
+
+```
+
+
+
+```{r}
+library(glmnet)
+
+# X_train for features and y_train for the target variable
+
+# Train Ridge Regression Model
+ridge_model <- glmnet(X_train, y_train, alpha = 0)
+cv_ridge <- cv.glmnet(X_train, y_train, alpha = 0)
+best_lambda_ridge <- cv_ridge$lambda.min
+
+# Train Lasso Regression Model
+lasso_model <- glmnet(X_train, y_train, alpha = 1)
+cv_lasso <- cv.glmnet(X_train, y_train, alpha = 1)
+best_lambda_lasso <- cv_lasso$lambda.min
+
+```
+
+```{r}
+# Re-check the model training and lambda selection
+print(best_lambda_ridge)
+print(best_lambda_lasso)
+
+```
+
+```{r}
+# Removing rows with NA values in the testing set
+testing_set_cleaned <- na.omit(testing_set)
+
+# Recreating X_test and y_test after removing NAs
+X_test_cleaned <- as.matrix(testing_set_cleaned[, names(testing_set_cleaned) != "stop_duration_mins"])
+y_test_cleaned <- testing_set_cleaned$stop_duration_mins
+
+```
+
+
+
+
+```{r}
+# Ridge Predictions
+predictions_ridge <- predict(ridge_model, s = best_lambda_ridge, newx = X_test_cleaned)
+
+# Lasso Predictions
+predictions_lasso <- predict(lasso_model, s = best_lambda_lasso, newx = X_test_cleaned)
+
+# Compute MAE
+mae_ridge <- mean(abs(predictions_ridge - y_test_cleaned), na.rm = TRUE)
+mae_lasso <- mean(abs(predictions_lasso - y_test_cleaned), na.rm = TRUE)
+
+print(paste("Ridge MAE:", mae_ridge))
+print(paste("Lasso MAE:", mae_lasso))
+
+```
+
+
+#Cross validation
+```{r}
+# Cross-validation for Ridge
+cv_ridge <- cv.glmnet(X_train, y_train, alpha = 0)
+best_lambda_ridge <- cv_ridge$lambda.min
+print(paste("Best lambda for Ridge:", best_lambda_ridge))
+
+# Cross-validation for Lasso
+cv_lasso <- cv.glmnet(X_train, y_train, alpha = 1)
+best_lambda_lasso <- cv_lasso$lambda.min
+print(paste("Best lambda for Lasso:", best_lambda_lasso))
+
+```
+
+```{r}
+
+library(glmnet)
+library(caret)
+
+# Set a seed for reproducibility
+set.seed(123)
+
+# Create folds for cross-validation
+folds <- createFolds(scaled_data$stop_duration_mins, k = 10, list = TRUE)
+
+# Initialize an empty vector to store MAE for each fold for Ridge regression
+mae_values_ridge <- vector("numeric", length = length(folds))
+
+# Loop through each fold for Ridge regression
+for(i in seq_along(folds)) {
+  # Split the data into training and testing sets
+  train_indices <- folds[[i]]
+  train_set <- scaled_data[train_indices, ]
+  test_set <- scaled_data[-train_indices, ]
+  
+  # Prepare the matrix for glmnet
+  x_train <- model.matrix(~., train_set)[,-1]
+  y_train <- train_set$stop_duration_mins
+  x_test <- model.matrix(~., test_set)[,-1]
+  y_test <- test_set$stop_duration_mins
+  
+  # Fit the Ridge model
+  ridge_model <- glmnet(x_train, y_train, alpha = 0)
+  
+  # Find the best lambda using cross-validation
+  cv_model_ridge <- cv.glmnet(x_train, y_train, alpha = 0)
+  lambda_best_ridge <- cv_model_ridge$lambda.min
+  
+  # Make predictions on the test set
+  predictions_ridge <- predict(ridge_model, s = lambda_best_ridge, newx = x_test)
+  
+  # Calculate MAE for this fold
+  mae_values_ridge[i] <- mean(abs(predictions_ridge - y_test))
+}
+
+# Calculate the average MAE across all folds for Ridge regression
+average_mae_ridge <- mean(mae_values_ridge)
+print(average_mae_ridge)
+
+```
+
+
+Cross Validation On Lasso
+```{r}
+library(glmnet)
+library(caret)
+
+
+set.seed(123) # For reproducibility
+
+# Define the number of folds
+folds <- createFolds(scaled_data$stop_duration_mins, k = 10, list = TRUE)
+
+# Initialize an empty vector to store MAE for each fold
+mae_values <- vector(length = length(folds))
+
+for (i in seq_along(folds)) {
+    # Split the data into training and testing sets
+    train_indices <- folds[[i]]
+    train_set <- scaled_data[train_indices, ]
+    test_set <- scaled_data[-train_indices, ]
+    
+    # Prepare the matrix for glmnet
+    x_train <- model.matrix(~., train_set)[,-1]
+    y_train <- train_set$stop_duration_mins
+    x_test <- model.matrix(~., test_set)[,-1]
+    y_test <- test_set$stop_duration_mins
+
+    # Fit the Lasso model
+    lasso_model <- glmnet(x_train, y_train, alpha = 1)
+    
+    # Find the best lambda using cross-validation
+    cv_model <- cv.glmnet(x_train, y_train, alpha = 1)
+    lambda_best <- cv_model$lambda.min
+    
+    # Make predictions on the test set
+    predictions <- predict(lasso_model, s = lambda_best, newx = x_test)
+
+    # Calculate MAE for this fold
+    mae_values[i] <- mean(abs(predictions - y_test), na.rm = TRUE)
+}
+
+# Calculate the average MAE across all folds
+average_mae <- mean(mae_values, na.rm = TRUE)
+print(average_mae)
+
+```
+
+
+
+
+After performing both Ridge and Lasso we decided to move on with Lasso since it has lower MAE
+
+
+```{r}
+
+X_train <- as.matrix(sampled_data_clean[, names(sampled_data_clean) != "stop_duration_mins"])
+y_train <- sampled_data_clean$stop_duration_mins
+
+```
+
+
+```{r}
+# Train the Lasso model with the optimal lambda
+lasso_model_final <- glmnet(X_train, y_train, alpha = 1)
+cv_model_lasso <- cv.glmnet(X_train, y_train, alpha = 1)
+optimal_lambda <- cv_model_lasso$lambda.min
+lasso_model_final <- glmnet(X_train, y_train, alpha = 1, lambda = optimal_lambda)
+
+# Get the model coefficients
+coefficients <- coef(lasso_model_final, s = optimal_lambda)
+
+# Print the coefficients for interpretation
+print(coefficients)
+
+```
+#Key Findings:
+
+Some of the variable that are seemed affercting stop time duration are;
+
+Person Searched: One of the most influential predictors is whether a person was searched (6.14370665). This suggests that stops involving a search tend to be significantly longer. This could be due to the additional procedures and time involved in conducting a search.
+
+Traffic Involved: The negative coefficient for traffic_involved (-2.58183919) implies that stops related to traffic issues are generally shorter. This could be because traffic-related stops might often be more routine and require less time.
+
+Ethnicity Factors: The coefficients for ethnicityMultiple (6.78985382) and ethnicityOther (17.00605764) indicate longer stop durations for these groups. This might point to more complex interactions or procedures involved with these stops.
+
+Primary Stop Reason: Various reasons for initiating a stop, such as call.for.service (9.29157498) and responding.to.bolo (5.89587511), are associated with longer durations. These reasons might involve more intricate situations requiring additional time to resolve.
+
+
+
+#Making The test set to have equal columns with the train set.
+```{r}
+# Columns to be removed
+columns_to_remove <- c("ticket_count", "warning_count", "genderX", 
+                       "ethnicityAmerican.Indian.Alaska.Native", 
+                       "ethnicityNative.Hawaiian.Pacific.Islander")
+
+# Remove the specified columns from X_test
+X_test <- X_test[, !(colnames(X_test) %in% columns_to_remove)]
+
+```
+
+
+
+
+# Model Validation
+```{r}
+# Predict on the test set
+predictions_lasso <- predict(lasso_model_final, newx = X_test, s = optimal_lambda)
+
+# Calculate MAE (or other metrics) for the test set
+# Calculate MAE
+mae <- mean(abs(predictions - y_test), na.rm = TRUE)
+
+print(paste("Lasso Regression MAE on Test Set:", mae))
+
+
+```
+ 
+ 
+ 
+#Coefficient Path
+Shows how the coefficients of the predictors shrink as the regularization parameter (lambda) increases.
+```{r}
+library(glmnet)
+
+plot(lasso_model_final, xvar = "lambda", label = TRUE)
+title("Coefficient Path for Lasso Regression")
+
+```
+
+
+#Variable Importance
+
+```{r}
+# Get coefficients at the best lambda
+best_lambda <- cv_model_lasso$lambda.min
+coefficients <- coef(lasso_model_final, s = best_lambda)[,1]
+
+# Create a dataframe of coefficients
+coeff_df <- as.data.frame(coefficients)
+coeff_df$variable <- row.names(coeff_df)
+colnames(coeff_df)[1] <- "coefficient"
+
+# Plotting
+library(ggplot2)
+ggplot(coeff_df, aes(x = reorder(variable, coefficient), y = coefficient)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme_minimal() +
+  xlab("Variables") +
+  ylab("Coefficient Value") +
+  ggtitle("Variable Importance in Lasso Regression")
+
+```
+
+#Discussion.
+
+#Coefficient Path for Lasso Regression 
+
+The coefficient path plot shows how the coefficients of the variables change as the regularization penalty (lambda) increases. The x-axis represents the log of lambda values, and the y-axis represents the coefficient values of the predictors.
+
+Each line corresponds to a predictor variable. As lambda increases to the left, more coefficients shrink towards zero, which is the essence of Lasso regression - it performs feature selection by setting some coefficients to exactly zero.
+
+The plot suggests that only a few predictors remain significant as lambda increases, while most others are penalized to zero. This is indicative of the Lasso model's ability to reduce model complexity by excluding less important variables.
+
+#Variable Importance in Lasso Regression 
+
+The variable importance plot ranks the predictors by the absolute value of their coefficients. Larger absolute values have a more significant impact on the response variable in the model.
+
+It appears that ethnicityOther, primary_stop_reasoninformation.obtained.from.witnesses.or.informants, primary_stop_reasonresponding.to.bolo, person_searched, and primary_stop_reasoncall.for.service are among the most important predictors in the model.
+
+The presence of strong positive or negative coefficients for these variables suggests they have a substantial influence on the duration of a police stop. For example, ethnicityOther and primary_stop_reasoninformation.obtained.from.witnesses.or.informants seem to be strong predictors for longer stop durations.
+
+#General Observations
+
+The model has identified a subset of predictors that are the most influential in determining the outcome (stop duration), which can help focus on key factors during analysis.
+The results emphasize the importance of certain stop outcomes and the reasons for the stop in determining stop duration, which could be useful for policymakers and law enforcement to understand patterns in police stops.
+
+It's notable that some district variables (stop_district6D, stop_district3D, stop_district1D) also appear in the variable importance plot, indicating regional variations in stop duration.
+
+
+#Considerations for Further Analysis
+
+It's important to consider the context and potential implications of these findings. For example, why might ethnicityOther have such a large coefficient? This warrants a deeper investigation to ensure fair and unbiased policing practices.
+
+While the model has statistical significance, the real-world applicability also depends on the quality of the data and the socio-political context.
+Given the Lasso model's ability to select features, further research could delve into why certain variables were excluded and the practical significance of the included variables.
