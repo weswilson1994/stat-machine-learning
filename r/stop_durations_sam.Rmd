@@ -18,7 +18,7 @@ library(caret)
 ```
 
 ```{r}
-wes_cleaned_stop_data <- read.csv("wes_cleaned_stop_data.csv")
+wes_cleaned_stop_data <- readRDS("../data/final/wes_cleaned_stop_data.rds")
 ```
 
 
