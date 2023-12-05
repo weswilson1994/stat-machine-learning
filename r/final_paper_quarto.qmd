@@ -71,20 +71,51 @@ Overall, the most flexible, non-parametric KNN model performed the best. Still, 
 
 ### How Long Will the Stop Last?
 
--   Predicting stop duration: Build a model to predict how long a police stop might last once initiated.
+Methods: Ridge and Lasso Regression
 
--   Approach / methods
+Mae For Ridge Regression : 1.3801
 
--   One plot
+Mae For Lasso Regression: 0.3012663
+
+We ended up selecting Lasso because it had the lowest Mae; This means that among the two model Ridge and Lasso, Lasso is the best Model in predicting Stop duration (see output below).
+
+![](plots/lasso_output_sam.png)
+
+Variable Importance Plot
+
+![](plots/variable_importance_sam.png)
 
 ## Results
 
 In predicting stop outcomes, the lasso regression retained all variables, and the most-flexible K-Nearest Neighbors (KNN) model performed best with a 59% accuracy. Cross-validation LDA and QDA models achieved 49% and 48% accuracy, facing challenges with certain categorical variables. The overall conclusion underscores the limitations of the 59% accuracy in the KNN model, pointing to potential issues with feature selection or the predictive capacity of available predictors in determining police stop outcomes.
 
+### Stop Duration: Interpretation of Variable Importance from Lasso Regression
+
+**Key Predictors Identified**
+
+-   The Lasso model identified **ethnicityOther**, **primary_stop_reasoninformation.obtained.from.witnesses.or.informants**, **primary_stop_reasonresponding.to.bolo**, **person_searched**, and **primary_stop_reasoncall.for.service** as significant predictors of the duration of police stops.
+
+-   The significance of these variables suggests that they have a substantial impact on how long a police stop might last. For instance, stops involving individuals of **ethnicityOther** or stops initiated due to information obtained from witnesses or informants tend to have different durations compared to other stops.
+
+**Interpreting the Predictors**
+
+-   **Ethnicity Factor**: The model suggests that the ethnicity of the person stopped (particularly **ethnicityOther**) plays a role in determining the stop duration. This might indicate different interaction dynamics or procedures based on ethnicity, which could be a point of interest for further investigation to ensure fair and unbiased policing practices.
+
+-   **Stop Reason**: The reasons for the stop, such as responding to a BOLO (Be On the LookOut) alert or calls for service, significantly influence the duration. This could be due to the complexity or urgency of the situations associated with these reasons.
+
+### Interpretation of Average Durations
+
+**Closeness of Actual and Predicted Durations**:
+
+-   The average actual duration of a stop is approximately 16.07 minutes, while the average predicted duration from the model is around 15.95 minutes.
+
+-   The closeness of these two figures suggests that the model is doing a good job in estimating the average duration of police stops. It indicates that the model captures the underlying patterns in the data well, at least at an aggregate level.
+
 ## Recommendations
 
--   Recommendation 1
--   Recommendation 2
+-   The model provides valuable insights into the factors influencing police stop durations, which can inform policy discussions and training programs aimed at improving efficiency and fairness in law enforcement.
+-   The close match between the predicted and actual average durations shows the model\'s effectiveness, though it\'s essential to remember that average predictions do not account for individual variability and specific circumstances of each stop.
+-   Understanding the key predictors can help in tailoring interventions or policies to address the specific needs and circumstances related to different stop reasons and demographic factors.
 
 {{< pagebreak >}}
 
