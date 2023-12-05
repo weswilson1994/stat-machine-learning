@@ -1,9 +1,9 @@
 ---
-title: "Machine Learning"
+title: "How Does the Public Interact with Police in Washington, D.C.?"
 subtitle: "Statistical Machine Learning--Stat 627"
 author:
   - name: "Jithendra Sadu, Samuel Mweni, Wesley Wilson"
-date: "23 Oct 2023"
+date: "6 Dec 2023"
 format: 
   docx:
     reference-doc: custom-reference-doc.docx
@@ -22,12 +22,9 @@ n_rows <- nrow(stop_data)
 
 ## Executive Summary
 
-Now more than ever, state and local governments are actively working to curb police bias and brutality while promoting community policing. The effective use of available data is essential in achieving transparency, accountability, and well-informed decision-making within law enforcement agencies. In this context, we endeavor to comprehend individuals' interactions with the police in Washington, D.C. Through the construction of machine learning models, we aim to predict key aspects such as police stop duration, the likelihood of a search occurring, and the overall outcome of police interactions. Our classification model demonstrated an approximately 60% accuracy in predicting stop outcomes. These findings are especially relevant to the local D.C. council members, police officers, and the general public. [^1]
+Now more than ever, state and local governments are actively working to curb police bias and brutality while promoting community policing. The effective use of available data is essential in achieving transparency, accountability, and well-informed decision-making within law enforcement agencies. In this context, we endeavor to comprehend individuals' interactions with the police in Washington, D.C. Through the construction of machine learning models, we aim to predict key aspects such as police stop duration, the likelihood of a search occurring, and the overall outcome of police interactions. Our classification model demonstrated an approximately 60% accuracy in predicting stop outcomes. Our Lasso model effectively estimate average stop duration and identified key predictors of police stop durations, including ethnicity and specific stop reasons, signifying their significant impact and highlighting potential areas for investigating fairness and bias in policing practices. These findings are especially relevant to the local D.C. council members, police officers, and the general public. [^1]
 
 [^1]: Machine learning models developed for learning purposes in policing should not be employed for operational use due to the risk of perpetuating biases and contributing to unjust practices. Careful scrutiny and ongoing ethical evaluations are imperative to prevent the unwarranted application of these models and ensure that their use aligns with principles of fairness, accountability, and transparency.
-
--   A sentence on ethical considerations -- something like this is for exploratory purposes only, there is a big issue with operationalizing predictive models into police interactions.
--   A sentence on each major finding (I have already added mine).
 
 ## Research Question
 
