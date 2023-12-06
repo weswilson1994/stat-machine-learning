@@ -58,14 +58,6 @@ Next, we fit cross-validation LDA and QDA models on the stop data. The LDA and Q
 
 Overall, the most flexible, non-parametric KNN model performed the best. Still, with an accuracy rate of only 59%, the KNN model leaves something to be desired. This could be due to our feature selection or the available predictors not providing a clear trend in predicting stop outcomes. If the latter is the case, there may be unobserved factors influencing stop outcomes, like the demeanor of the subject or the race of the officer. Given more time, segmenting our outcome variables into two classes and using logistic regression, trees, or random forests might have produced a more accurate model.
 
-### Will I be Searched by the Police?
-
--   Will I be searched by the police?: Build a binary classification model capable of predicting the likeliness of a police search based on various factors such as demographics, time of day, stop duration, etc.
-
--   Approach / methods
-
--   One plot
-
 ### How Long Will the Stop Last?
 
 Methods: Ridge and Lasso Regression
@@ -111,7 +103,7 @@ In predicting stop outcomes, the lasso regression retained all variables, and th
 ## Recommendations
 
 -   The model provides valuable insights into the factors influencing police stop durations, which can inform policy discussions and training programs aimed at improving efficiency and fairness in law enforcement.
--   The close match between the predicted and actual average durations shows the model\'s effectiveness, though it\'s essential to remember that average predictions do not account for individual variability and specific circumstances of each stop.
+-   The close match between the predicted and actual average durations shows the model's effectiveness, though it's essential to remember that average predictions do not account for individual variability and specific circumstances of each stop.
 -   Understanding the key predictors can help in tailoring interventions or policies to address the specific needs and circumstances related to different stop reasons and demographic factors.
 
 {{< pagebreak >}}
